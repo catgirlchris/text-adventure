@@ -75,25 +75,53 @@ def draw_x(pad:curses.window, offset:int):
                 time.sleep(0.1)
         j = (j+3)%26
 
-def rain(pad:curses.window, offset:int):
-    size = [26, 67]
+class Cascade():
+    def __init__(self, pad:curses.window, offset:int):
+        self.size = [26, 67]
+        self.pad = pad
+        self.offset = offset
 
-    gotas = []
-    for g in range(0,26,1):
-        gotas.append(0)
+        self.gotas = []
+        for g in range(0,self.size[0],1):
+            self.gotas.append(0)
 
-    prev_cursor_state = curses.curs_set(False)
-    for k in range(100):
-        for i in range(1,26,1):
-            gotas[i] += random.randint(0,1)
+    def update(self):
+        prev_cursor_state = curses.curs_set(False)
+        for k in range(100):
+            for i in range(1,self.size[0],1):
+                self.gotas[i] += random.randint(0,1)
 
-            pad.chgat(gotas[i],i, 1, curses.color_pair(3))
-            pad.noutrefresh(offset,0, 2,67, 26,116)
-        curses.doupdate()
+                self.pad.chgat(self.gotas[i],i, 1, curses.color_pair(3))
+                self.pad.noutrefresh(self.offset,0, 2,67, self.size[0],116)
+            curses.doupdate()
+            time.sleep(0.05)
+
+        curses.curs_set(prev_cursor_state)
+
+class Rain():
+    def __init__(self, pad:curses.window, offset:int):
+        self.size = [27, 50]
+        self.pad = pad
+        self.offset = offset
+
+        self.gotas = []
+        for g in range(0,self.size[1],1):
+            self.gotas.append(0)
+
+    def update(self):
+        prev_cursor_state = curses.curs_set(False)
+        for i in range(0,self.size[1],1):
+            if (self.gotas[i]>0):
+                self.pad.chgat(self.gotas[i]-1,i, 1, curses.color_pair(2))    
+            self.gotas[i] += random.randint(0,1)
+            if (self.gotas[i] >= self.size[0]):
+                self.gotas[i] = 0
+            self.pad.chgat(self.gotas[i],i, 1, curses.color_pair(3))
+            self.pad.noutrefresh(self.offset,0, 2,67, self.size[0],116)
+        #curses.doupdate()
         time.sleep(0.05)
 
-    curses.curs_set(prev_cursor_state)
-
+        curses.curs_set(prev_cursor_state)
 
 def main(stdscr:curses.window):
     # init color pairs (color, fondo)
@@ -148,7 +176,12 @@ def main(stdscr:curses.window):
         time.sleep(0)
     
     #draw_x(bigpad, offset)
-    rain(bigpad, offset)
+    rain = Rain(bigpad, offset)
+
+    while(True):
+        rain.update()
+        bigpad.refresh(offset,0, 2,67, 26,116)
+        
 
     stdscr.refresh()
     offset = 0
