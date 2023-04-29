@@ -60,6 +60,7 @@ class Window():
     def __init__(self, nlines, ncols, begin_y, begin_x):
         self.win = curses.newwin(nlines, ncols, begin_y, begin_x)    
 
+# TODO check the scroll functions
 def draw_x(pad:curses.window, offset:int):
     j:int = 0
     for k in range(10):
@@ -123,6 +124,12 @@ class Rain():
 
         curses.curs_set(prev_cursor_state)
 
+    def draw(self):
+        # TODO think about this is needed and how to include it in code
+        #      ¿maybe creating a draw function for a generic pad?
+        pass
+
+
 def main(stdscr:curses.window):
     # init color pairs (color, fondo)
     init_color_pairs()
@@ -161,11 +168,17 @@ def main(stdscr:curses.window):
                              1+14+1, 1+30+1)
     editbox2 = curses.textpad.Textbox(editwin2)
 
+    stdscr.attron(curses.color_pair(2))
     curses.textpad.rectangle(stdscr, 1,33, 1+14+1, 1+63+1)
+    stdscr.attroff(curses.color_pair(2))
+
+    stdscr.attron(curses.color_pair(3))
     curses.textpad.rectangle(stdscr, 1,66, 1+26+1,1+116+1)
+    stdscr.attroff(curses.color_pair(3))
 
     stdscr.refresh()
 
+    # TODO check window.scroll functions
     # print slow
     offset = 0
     for c in dlog_casa:
@@ -174,14 +187,22 @@ def main(stdscr:curses.window):
             offset += 3
         bigpad.refresh(offset,0, 2,67, 26,116)
         time.sleep(0)
-    
+
+        #change rectangle color
+    stdscr.attron(curses.color_pair(2))
+    stdscr.chgat(1,66, 10, curses.color_pair(3))
+    stdscr.attroff(curses.color_pair(2))
+    bigpad.refresh(offset,0, 2,67, 26,116)
+
     #draw_x(bigpad, offset)
     rain = Rain(bigpad, offset)
 
-    while(True):
+    '''while(True):
         rain.update()
+        # TODO check why smaxrow cant be more than 26
+        # TODO check why smaxrow does not change how much rain is drawn
         bigpad.refresh(offset,0, 2,67, 26,116)
-        
+    '''    
 
     stdscr.refresh()
     offset = 0
