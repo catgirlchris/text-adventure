@@ -55,6 +55,7 @@ def init_color_pairs():
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
     curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
 class Window():
     def __init__(self, nlines, ncols, begin_y, begin_x):
@@ -188,9 +189,9 @@ def main(stdscr:curses.window):
         bigpad.refresh(offset,0, 2,67, 26,116)
         time.sleep(0)
 
-        #change rectangle color
+    #change rectangle color
     stdscr.attron(curses.color_pair(2))
-    stdscr.chgat(1,66, 10, curses.color_pair(3))
+    stdscr.addstr(1,66+2, 'CHAT TERMINAL', curses.color_pair(5))
     stdscr.attroff(curses.color_pair(2))
     bigpad.refresh(offset,0, 2,67, 26,116)
 
