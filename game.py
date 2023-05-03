@@ -55,7 +55,7 @@ def init_color_pairs():
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
     curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(5, 2, 0)
 
 class Window():
     def __init__(self, nlines, ncols, begin_y, begin_x):
@@ -133,7 +133,8 @@ class Rain():
 
 def main(stdscr:curses.window):
     # init color pairs (color, fondo)
-    init_color_pairs()
+    if curses.has_colors():
+        init_color_pairs()
 
     # gui sizes and data
     header_info = {'begin_yx':[0,0],
@@ -189,7 +190,7 @@ def main(stdscr:curses.window):
         bigpad.refresh(offset,0, 2,67, 26,116)
         time.sleep(0)
 
-    #change rectangle color
+    # rectangle title color
     stdscr.attron(curses.color_pair(2))
     stdscr.addstr(1,66+2, 'CHAT TERMINAL', curses.color_pair(5))
     stdscr.attroff(curses.color_pair(2))
