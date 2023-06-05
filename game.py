@@ -4,6 +4,15 @@ import curses
 import curses.textpad
 import traceback
 import random
+from playsound import playsound
+from pathlib import Path
+
+''' TODO CREDITS
+sounds: Atelier Magicae '''
+
+SCRIPT_DIR = Path(__file__).parent
+PIXEL32 = SCRIPT_DIR / 'sfx' / 'Pixel_32.wav'
+playsound(str(PIXEL32))
 
 game_name : str = 'text-adventure'
 game_version : str = 'v0'

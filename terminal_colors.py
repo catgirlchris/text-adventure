@@ -1,23 +1,32 @@
-
+from playsound import playsound
 import curses
 import curses.textpad
 import time
+from pathlib import Path
+
+from playsound import playsound
+
+''' TODO CREDITS
+sounds: Atelier Magicae '''
+
+SCRIPT_DIR = Path(__file__).parent
+PIXEL32 = SCRIPT_DIR / 'sfx' / 'Pixel_33.wav'
 
 def main(stdscr:'curses._CursesWindow'):
     CP_BLANK = 256
     if curses.has_colors():
         curses.use_default_colors()
 
-        for c in range(curses.COLORS):
+        for c in range(1, curses.COLOR_PAIRS-1):
             curses.init_pair(c, 0, c)
 
-        curses.init_pair(CP_BLANK, 0, 0)
+        #curses.init_pair(CP_BLANK, 0, 0)
 
     curses.curs_set(0)
     curses.mousemask(-1)
 
     stdscr.insstr(0,0, f'COLORS: {curses.COLORS}')
-    stdscr.insstr(1,0, f'COLOR PAIRS: {curses.COLOR_PAIRS}, DEFAULT_PAIR: {curses.color_content(0)}')
+    #stdscr.insstr(1,0, f'COLOR PAIRS: {curses.COLOR_PAIRS}, DEFAULT_PAIR: {curses.color_content(0)}')
 
     
     columns = 100
@@ -130,6 +139,7 @@ def main(stdscr:'curses._CursesWindow'):
             y, x = my - beg[0] + offset, mx-3
             if (bstate == curses.BUTTON1_CLICKED, colorpad.enclose(y, x)):
                 #stdscr.addstr(y, x, stdscr.instr(my, mx, 5))
+                playsound(str(PIXEL32), False)
                 hlpad_pos[0],hlpad_pos[1] = y, x
                 draw_colors(colorpad, color_structure)
                 highlightpad.border()
