@@ -126,13 +126,25 @@ def main(stdscr:'curses._CursesWindow'):
             hl_overlay()
             offset = max(offset-2, 0)
         elif (event == curses.KEY_RIGHT):
-            color_structure[offset] += 1
+            '''color_structure[offset] += 1
             color_structure[offset+1] -= 1
+            draw_colors(colorpad, color_structure)'''
+            colorpad.erase()
+            hlpad_pos[1] = min(hlpad_pos[1]+11, size[1])
             draw_colors(colorpad, color_structure)
+            highlightpad.border()
+            hl_overlay()
+            #offset = min(offset+2, len(color_structure)+size[0])
+            
         elif (event == curses.KEY_LEFT):
-            color_structure[offset] -= 1
+            '''color_structure[offset] -= 1
             color_structure[offset-1] += 1
+            draw_colors(colorpad, color_structure)'''
+            colorpad.erase()
+            hlpad_pos[1] = max(hlpad_pos[1]-11, 0)
             draw_colors(colorpad, color_structure)
+            highlightpad.border()
+            hl_overlay()
 
         if event == curses.KEY_MOUSE:
             _, mx, my, _, bstate = curses.getmouse()

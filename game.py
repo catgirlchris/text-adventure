@@ -208,12 +208,12 @@ def main(stdscr:curses.window):
     #draw_x(bigpad, offset)
     rain = Rain(bigpad, offset)
 
-    '''while(True):
+    while(True):
         rain.update()
         # TODO check why smaxrow cant be more than 26
         # TODO check why smaxrow does not change how much rain is drawn
         bigpad.refresh(offset,0, 2,67, 26,116)
-    '''    
+      
 
     stdscr.refresh()
     offset = 0
