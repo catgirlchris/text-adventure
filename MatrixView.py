@@ -90,6 +90,10 @@ class WidgetManager:
     def refresh(self):
         self.win.refresh()
 
+    def input(self, key: int, mouse_info: Tuple[int, int, int, int, int]):
+        for w in self.widgets:
+            w.input(key, mouse_info)
+
 
 
 class Panel():
