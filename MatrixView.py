@@ -139,7 +139,7 @@ class MatrixView(Panel):
 
 
 def main(screen:'curses._CursesWindow'):
-    #curses.curs_set(0)
+    curses.curs_set(0)
     curses.mousemask(-1)
 
     win = MatrixView(15,30, screen)
