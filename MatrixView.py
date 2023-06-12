@@ -98,6 +98,7 @@ class MatrixView(Panel):
         self.pad = curses.newpad(nlines, ncols)
         self.border = border
         self.screen = screen
+        self.wm = WidgetManager(self)
         
         self.view = View(0,0, 0,0, 15,30, self, screen)
         self.view.boxouter()
@@ -114,7 +115,8 @@ class MatrixView(Panel):
 
     def showinfobutton(self):
         '''Activa un button para información de debuggin. Aparece en la parte superior derecha del marco.'''
-        self.screen.addch(0,0, '+')
+        b: Button = Button(self, [0,0], '!')
+        self.wm.addwidget(b)
         self.screen.refresh()
 
     def addstr(self, y, x, string, attr=0):
@@ -132,6 +134,7 @@ class MatrixView(Panel):
         self.pad.refresh(self.view.pminrow,self.view.pmincol, 
                          self.view.sminrow+self.border,self.view.smincol+self.border, 
                          self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
+        self.wm.drawwidgets()
 
 
 
