@@ -2,7 +2,7 @@ import curses
 import curses.textpad
 
 import time
-from typing import Tuple
+from typing import List, Tuple
 
 import draw
 
@@ -34,33 +34,65 @@ class View:
         '''Devuelve el tamaño de la ventana vista a dibujar.'''
         return self.smaxrow - self.sminrow, self.smaxcol - self.smincol
 
-class Widget:
-    def __init__(self, posyx):
-        self.posyx = posyx
 
+
+class Widget:
+    '''Clase "abstracta" que generaliza los elementos que formarán un menú como MatrixView.'''
+    def __init__(self, win: 'curses._CursesWindow', posyx, listening: bool=1):
+        self.win = win
+        self.posyx = posyx
+        
     def setdata(self, data):
         self.data = data
 
+    def draw(self):
+        pass
+
+
+
 class Button(Widget):
     '''Clase que representa un botón como el de cerrar ventana o mostar info.'''
-    def __init__(self, posyx, symbol: str='x', listening: bool=1):
-        self.posyx = posyx
+    def __init__(self, win: 'MatrixView', posyx: Tuple[int,int], symbol: str='x', listening: bool=1):
+        Widget.__init__(self, win, posyx, listening)
         self.symbol = symbol
-        self.listening = listening
 
     def ispressed(self, mouse_pos: Tuple[int, int]):
         if self.posyx == mouse_pos:
             pass
 
-class InputManager:
-    def __init__(self):
-        self.widgets = dict()
+    def draw(self):
+        self.win.addstr(self.posyx[0], self.posyx[1], self.symbol)
 
-    def addwidget(self, b: Widget):
-        self.widgets
 
-class MatrixView:
-    """Clase que encapsula la clase pad (curses._CursesWindow)."""
+
+class WidgetManager:
+    def __init__(self, win:'MatrixView'):
+        self.win = win
+        self.widgets: List[Widget] = list()
+
+    def addwidget(self, w: Widget):
+        self.widgets.append(w)
+
+    def drawwidget(self, w: Widget):
+        w.draw()
+
+    def drawwidgets(self):
+        for w in self.widgets:
+            self.drawwidget(w)
+
+    def refresh(self):
+        self.win.refresh()
+
+
+
+class Panel():
+    """Clase que encapsula una ventana de curses. Generaliza los distintos tipos de ventanas como MatrixView."""
+    pass
+
+
+
+class MatrixView(Panel):
+    """Clase hereda de Pane"""
 
     def __init__(self, nlines, ncols, screen:'curses._CursesWindow', border=1):
         self.pad = curses.newpad(nlines, ncols)
@@ -90,7 +122,7 @@ class MatrixView:
         self.pad.addstr(y, x, string, attr)
 
     def processinput(self):
-        
+        pass
 
     def update(self):
         pass
