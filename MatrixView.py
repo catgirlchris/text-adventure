@@ -33,6 +33,10 @@ class View:
     def getsize(self) -> Tuple[int,int]:
         '''Devuelve el tamaño de la ventana vista a dibujar.'''
         return self.smaxrow - self.sminrow, self.smaxcol - self.smincol
+    
+    def getposyx(self) -> Tuple[int, int]:
+        '''Devuelve la posicion (en Screen por ahora) de la vista.'''
+        return self.pminrow, self.pmincol
 
 
 
