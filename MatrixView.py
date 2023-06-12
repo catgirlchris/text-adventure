@@ -113,12 +113,6 @@ class MatrixView(Panel):
         self.screen.addstr(self.view.smaxrow+1,0, info)
         self.screen.refresh()
 
-    def showinfobutton(self):
-        '''Activa un button para información de debuggin. Aparece en la parte superior derecha del marco.'''
-        b: Button = Button(self, [0,0], '!')
-        self.wm.addwidget(b)
-        self.screen.refresh()
-
     def addstr(self, y, x, string, attr=0):
         '''Añade string al pad. Por ahora es lo mismo que usar pad.addstr()'''
         self.pad.addstr(y, x, string, attr)
@@ -149,7 +143,7 @@ def main(screen:'curses._CursesWindow'):
     screen.refresh()
 
     #ch = win.pad.getch()
-    win.showinfobutton()
+    #win.showinfobutton()
 
     end = True
 
