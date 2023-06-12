@@ -65,10 +65,12 @@ class Button(Widget):
         self.onborder = onborder
 
     def input(self, key: int, mouse_info: Tuple[int, int, int, int, int]):
-        my, mx = mouse_info[1], mouse_info[2]
-        if [my,mx] == self.posyx:
+        mx, my = mouse_info[1], mouse_info[2]
+        self.win.screen.addstr(self.win.screen.getmaxyx()[0]-2, 0, str(mouse_info))
+        if my == self.posyx[0] and mx == self.posyx[1]:
             # TODO cambiar despues
             self.win.showinfo()
+
 
     def ispressed(self, mouse_pos: Tuple[int, int]):
         if self.posyx == mouse_pos:
@@ -178,9 +180,6 @@ def main(screen:'curses._CursesWindow'):
     win.refresh()
     screen.refresh()
 
-    #ch = win.pad.getch()
-    #win.showinfobutton()
-
     end = True
 
     while(end):
@@ -191,7 +190,7 @@ def main(screen:'curses._CursesWindow'):
             end = False
         if event == curses.KEY_MOUSE:
             _, mx, my, _, bstate = curses.getmouse()
-            minfo = [_, mx, my, _, bstate]
+            minfo = _, mx, my, _, bstate
             if (bstate == curses.BUTTON1_CLICKED):
                 screen.addstr(screen.getmaxyx()[0]-1, 0, f"{mx:03},{my:03}")
 
