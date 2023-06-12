@@ -59,17 +59,28 @@ class Widget:
 
 class Button(Widget):
     '''Clase que representa un botón como el de cerrar ventana o mostar info.'''
-    def __init__(self, win: 'MatrixView', posyx: Tuple[int,int], symbol: str='x', listening: bool=1):
+    def __init__(self, win: 'MatrixView', posyx: Tuple[int,int], symbol: str='x', listening: bool=1, onborder: bool=0):
         Widget.__init__(self, win, posyx, listening)
         self.symbol = symbol
+        self.onborder = onborder
+
+    def input(self, key: int, mouse_info: Tuple[int, int, int, int, int]):
+        my, mx = mouse_info[1], mouse_info[2]
+        if [my,mx] == self.posyx:
+            # TODO cambiar despues
+            self.win.showinfo()
 
     def ispressed(self, mouse_pos: Tuple[int, int]):
         if self.posyx == mouse_pos:
             pass
 
     def draw(self):
-        self.win.addstr(self.posyx[0], self.posyx[1], self.symbol)
-
+        '''Dibuja el botón. Si está en el borde exterior, 
+        entonces lo dibuja en screen, fuera de la ventana a la que petenece.'''
+        if self.onborder:
+            self.win.screen.addstr(self.posyx[0]+self.win.view.pminrow, self.posyx[1]+self.win.view.pmincol, self.symbol)
+        else:
+            self.win.addstr(self.posyx[0], self.posyx[1], self.symbol)
 
 
 class WidgetManager:
@@ -105,18 +116,32 @@ class Panel():
 class MatrixView(Panel):
     """Clase hereda de Pane"""
 
-    def __init__(self, nlines, ncols, screen:'curses._CursesWindow', border=1):
+    def __init__(self, nlines, ncols, screen:'curses._CursesWindow', border=1, defaultbuttons: Tuple[bool, bool, bool] = [1,1,1]):
         self.pad = curses.newpad(nlines, ncols)
         self.border = border
         self.screen = screen
         self.wm = WidgetManager(self)
-        
         self.view = View(0,0, 0,0, 15,30, self, screen)
         self.view.boxouter()
+
+        self._adddefaultbuttons(defaultbuttons)
         
     def getsize(self):
         '''Devuelve el tamaño del pad y de la vista.'''
         return [self.pad.getmaxyx(), self.view.getsize()]
+    
+    def _adddefaultbuttons(self, defaultbuttons: Tuple[bool, bool, bool]):
+        y,x = 0, self.view.getsize()[1]
+        if defaultbuttons[0]:
+            exit = Button(self, [y,x], 'X', onborder=1)
+            self.wm.addwidget(exit)
+        if defaultbuttons[1]:
+            minimize = Button(self, [y,x-1], '▭', onborder=1)
+            self.wm.addwidget(minimize)
+        if defaultbuttons[2]:
+            help = Button(self, [y,x-2], '!', onborder=1)
+            self.wm.addwidget(help)
+
     
     def showinfo(self):
         '''Muestra informacion sobre el pad y la vista.'''
@@ -166,11 +191,11 @@ def main(screen:'curses._CursesWindow'):
             end = False
         if event == curses.KEY_MOUSE:
             _, mx, my, _, bstate = curses.getmouse()
+            minfo = [_, mx, my, _, bstate]
             if (bstate == curses.BUTTON1_CLICKED):
                 screen.addstr(screen.getmaxyx()[0]-1, 0, f"{mx:03},{my:03}")
 
-                if (mx == 0 and my == 0):
-                    screen.addstr(screen.getmaxyx()[0]-2, 0, f"Help button clicked!")
+                win.wm.input(event, minfo)
 
         win.refresh()
         screen.refresh()
