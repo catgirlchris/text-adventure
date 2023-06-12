@@ -38,7 +38,7 @@ class View:
 
 class Widget:
     '''Clase "abstracta" que generaliza los elementos que formarán un menú como MatrixView.'''
-    def __init__(self, win: 'curses._CursesWindow', posyx, listening: bool=1):
+    def __init__(self, win: 'MatrixView', posyx, listening: bool=1):
         self.win = win
         self.posyx = posyx
         
@@ -46,6 +46,9 @@ class Widget:
         self.data = data
 
     def draw(self):
+        pass
+
+    def input(self):
         pass
 
 
