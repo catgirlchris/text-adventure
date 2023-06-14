@@ -10,17 +10,38 @@ class View:
     '''Vista para mostrar el contenido de un "curses._CursesWindow".
     Por ahora usa coordenadas absolutas ya que los pads no tiene posicion en el mapa.'''
 
-    def __init__(self, pminrow: int, pmincol: int, sminrow: int, smincol: int, smaxrow: int, smaxcol: int, matrixview:'MatrixView', screen:'curses._CursesWindow'):
-        self.pminrow = pminrow
-        self.pmincol = pmincol
-        self.sminrow = sminrow
-        self.smincol = smincol
-        self.smaxrow = smaxrow
-        self.smaxcol = smaxcol
+    def __init__(self, y: int, x: int, size: Tuple[int,int], matrixview:'MatrixView', screen:'curses._CursesWindow', offset: Tuple[int,int] = [0, 0]):
+        self.y = y
+        self.x = x
+        self.size = size
+        self.offset = offset
 
         self.matrixview = matrixview
         self.screen = screen
 
+    @property
+    def pminrow(self):
+        return self.offset[0]
+
+    @property
+    def pmincol(self):
+        return self.offset[1]
+    
+    @property
+    def sminrow(self):
+        return self.y
+    
+    @property
+    def smincol(self):
+        return self.x
+    
+    @property
+    def smaxrow(self):
+        return self.y + self.size[0]
+    
+    @property
+    def smaxcol(self):
+        return self.x + self.size[1]
 
     def update(self):
         pass
@@ -32,7 +53,7 @@ class View:
     
     def getsize(self) -> Tuple[int,int]:
         '''Devuelve el tamaño de la ventana vista a dibujar.'''
-        return self.smaxrow - self.sminrow, self.smaxcol - self.smincol
+        return self.size
     
     def getposyx(self) -> Tuple[int, int]:
         '''Devuelve la posicion (en Screen por ahora) de la vista.'''
