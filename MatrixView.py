@@ -63,7 +63,8 @@ class View:
 
 class Widget:
     '''Clase "abstracta" que generaliza los elementos que formarán un menú como MatrixView.'''
-    def __init__(self, win: 'MatrixView', posyx, listening: bool=1):
+    def __init__(self, win: 'MatrixView', id: str, posyx: Tuple[int,int], listening: bool=1):
+        self.id = id
         self.win = win
         self.posyx = posyx
         
@@ -77,14 +78,16 @@ class Widget:
         pass
 
 
-
 class Button(Widget):
     '''Clase que representa un botón como el de cerrar ventana o mostar info.'''
-    def __init__(self, win: 'MatrixView', posyx: Tuple[int,int], symbol: str='x', listening: bool=1, onborder: bool=0):
-        Widget.__init__(self, win, posyx, listening)
+    def __init__(self, win: 'MatrixView', id: str, posyx: Tuple[int,int], command, symbol: str='x', listening: bool=1, onborder: bool=0):
+        Widget.__init__(self, win, id, posyx, listening)
+        self.command = command
         self.symbol = symbol
         self.onborder = onborder
+        self.pressed = False
 
+    '''Maneja el input'''
     def input(self, key: int, mouse_info: Tuple[int, int, int, int, int]):
         mx, my = mouse_info[1], mouse_info[2]
         self.win.screen.addstr(self.win.screen.getmaxyx()[0]-2, 0, str(mouse_info))
@@ -92,10 +95,14 @@ class Button(Widget):
             # TODO cambiar despues
             self.win.showinfo()
 
+    def ispressed(self) -> bool:
+        return self.pressed
+    
+    def press(self):
+        self.pressed = True
 
-    def ispressed(self, mouse_pos: Tuple[int, int]):
-        if self.posyx == mouse_pos:
-            pass
+    def release(self):
+        self.pressed = False
 
     def draw(self):
         '''Dibuja el botón. Si está en el borde exterior, 
@@ -139,12 +146,12 @@ class Panel():
 class MatrixView(Panel):
     """Clase hereda de Pane"""
 
-    def __init__(self, nlines, ncols, screen:'curses._CursesWindow', border=1, defaultbuttons: Tuple[bool, bool, bool] = [1,1,1]):
+    def __init__(self, nlines, ncols, viewinfo: Tuple[int, int, int, int], screen:'curses._CursesWindow', border=1, defaultbuttons: Tuple[bool, bool, bool] = [1,1,1]):
         self.pad = curses.newpad(nlines, ncols)
         self.border = border
         self.screen = screen
         self.wm = WidgetManager(self)
-        self.view = View(0,0, 0,0, 15,30, self, screen)
+        self.view = View(viewinfo[0],viewinfo[1], [viewinfo[2],viewinfo[3]], self, screen)
         self.view.boxouter()
 
         self._adddefaultbuttons(defaultbuttons)
@@ -154,22 +161,22 @@ class MatrixView(Panel):
         return [self.pad.getmaxyx(), self.view.getsize()]
     
     def _adddefaultbuttons(self, defaultbuttons: Tuple[bool, bool, bool]):
-        y,x = 0, self.view.getsize()[1]
+        y,x = self.view.y, self.view.x+self.view.size[1]
         if defaultbuttons[0]:
-            exit = Button(self, [y,x], 'X', onborder=1)
+            exit = Button(self, 'exit', [y,x], lambda self: self.showinfo(), 'X', onborder=1)
             self.wm.addwidget(exit)
         if defaultbuttons[1]:
-            minimize = Button(self, [y,x-1], '▭', onborder=1)
+            minimize = Button(self, 'minimize', [y,x-1], None, '▭', onborder=1)
             self.wm.addwidget(minimize)
         if defaultbuttons[2]:
-            help = Button(self, [y,x-2], '!', onborder=1)
+            help = Button(self, 'help', [y,x-2], None, '!', onborder=1)
             self.wm.addwidget(help)
 
     
     def showinfo(self):
         '''Muestra informacion sobre el pad y la vista.'''
         info = f"Vista:{self.getsize()[0]}, Pad:{self.getsize()[1]}"
-        self.screen.addstr(self.view.smaxrow+1,0, info)
+        self.screen.addstr(self.view.smaxrow+1,self.view.smincol+2, info)
         self.screen.refresh()
 
     def addstr(self, y, x, string, attr=0):
@@ -189,16 +196,22 @@ class MatrixView(Panel):
                          self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
         self.wm.drawwidgets()
 
-
+def exitcallback():
+    pass
 
 def main(screen:'curses._CursesWindow'):
     curses.curs_set(0)
     curses.mousemask(-1)
 
-    win = MatrixView(15,30, screen)
-    win.addstr(0, 0, 'Test string added.')
+    win = MatrixView(15,30, [0,0, 15, 40], screen)
+    win.addstr(0, 0, 'Ventanica 1')
     win.addstr(1,0, 'Hay '+str(curses.LINES)+' líneas y '+str(curses.COLS)+' columnas')
     win.refresh()
+
+    win2 = MatrixView(15,30, [0,42, screen.getmaxyx()[0]-0-3, screen.getmaxyx()[1]-42-3], screen)
+    win2.refresh()
+    win3 = MatrixView(15,30, [17,0, screen.getmaxyx()[0]-17-2-2, 40], screen)
+    win3.refresh()
     screen.refresh()
 
     end = True
@@ -216,8 +229,11 @@ def main(screen:'curses._CursesWindow'):
                 screen.addstr(screen.getmaxyx()[0]-1, 0, f"{mx:03},{my:03}")
 
                 win.wm.input(event, minfo)
+                win2.wm.input(event, minfo)
+                win3.wm.input(event, minfo)
 
         win.refresh()
+        win2.refresh()
         screen.refresh()
         time.sleep(0.0167)
         
