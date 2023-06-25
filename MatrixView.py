@@ -58,8 +58,7 @@ class View:
     def getposyx(self) -> Tuple[int, int]:
         '''Devuelve la posicion (en Screen por ahora) de la vista.'''
         return self.pminrow, self.pmincol
-
-
+    
 
 class Widget:
     '''Clase "abstracta" que generaliza los elementos que formarán un menú como MatrixView.'''
@@ -153,6 +152,7 @@ class MatrixView(Panel):
         self.wm = WidgetManager(self)
         self.view = View(viewinfo[0],viewinfo[1], [viewinfo[2],viewinfo[3]], self, screen)
         self.view.boxouter()
+        self.infowin = None
 
         self._adddefaultbuttons(defaultbuttons)
         
@@ -161,17 +161,23 @@ class MatrixView(Panel):
         return [self.pad.getmaxyx(), self.view.getsize()]
     
     def _adddefaultbuttons(self, defaultbuttons: Tuple[bool, bool, bool]):
+        '''Añade los botones por defecto a la esquina superior derecha.
+        defaultbuttons define las apariciones correspondientes: [info, minimize, exit]'''
         y,x = self.view.y, self.view.x+self.view.size[1]
-        if defaultbuttons[0]:
+        if defaultbuttons[2]:
             exit = Button(self, 'exit', [y,x], lambda self: self.showinfo(), 'X', onborder=1)
             self.wm.addwidget(exit)
         if defaultbuttons[1]:
             minimize = Button(self, 'minimize', [y,x-1], None, '▭', onborder=1)
             self.wm.addwidget(minimize)
-        if defaultbuttons[2]:
-            help = Button(self, 'help', [y,x-2], None, '!', onborder=1)
+        if defaultbuttons[0]:
+            self.infowin = self.pad.subpad(5,5)
+            self.infowin.box()
+            help = Button(self, 'help', [y,x-2], lambda self: self._drawinfowin(), '!', onborder=1)
             self.wm.addwidget(help)
 
+    def _drawinfowin(self):
+        self.infowin.refresh()
     
     def showinfo(self):
         '''Muestra informacion sobre el pad y la vista.'''
@@ -196,8 +202,16 @@ class MatrixView(Panel):
                          self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
         self.wm.drawwidgets()
 
+
+
+class InfoPad(MatrixView):
+    def __init__(self, screen):
+        MatrixView.__init__(self, 10, 10, [0,0,10,10], screen, border=1, defaultbuttons=[1, 0, 0])
+
+
 def exitcallback():
     pass
+
 
 def main(screen:'curses._CursesWindow'):
     curses.curs_set(0)
