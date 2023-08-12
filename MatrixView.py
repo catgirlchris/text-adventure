@@ -2,7 +2,7 @@ import curses
 import curses.textpad
 
 import time
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import draw
 
@@ -49,15 +49,18 @@ class View:
     def boxouter(self):
         '''Dibuja un rectangulo alrededor de la vista. Por ahora lo dibuja en screen, la pantalla principal.'''
         draw.rectangle(self.screen, self.sminrow, self.smincol, self.smaxrow+1, self.smaxcol+1)
-        self.screen.refresh()
     
     def getsize(self) -> Tuple[int,int]:
         '''Devuelve el tamaño de la ventana vista a dibujar.'''
         return self.size
     
     def getposyx(self) -> Tuple[int, int]:
-        '''Devuelve la posicion (en Screen por ahora) de la vista.'''
+        '''Devuelve la posicion relativa de la vista.'''
         return self.pminrow, self.pmincol
+    
+    def getposyxglobal(self) -> Tuple[int, int]:
+        '''Devuelve la posicion relativa de la vista.'''
+        return self.y, self.x
     
 
 class Widget:
@@ -92,7 +95,8 @@ class Button(Widget):
         self.win.screen.addstr(self.win.screen.getmaxyx()[0]-2, 0, str(mouse_info))
         if my == self.posyx[0] and mx == self.posyx[1]:
             # TODO cambiar despues
-            self.win.showinfo()
+            if self.command:
+                self.command()
 
     def ispressed(self) -> bool:
         return self.pressed
@@ -127,12 +131,13 @@ class WidgetManager:
         for w in self.widgets:
             self.drawwidget(w)
 
-    def refresh(self):
-        self.win.refresh()
+    def noutrefresh(self):
+        self.win.noutrefresh()
 
     def input(self, key: int, mouse_info: Tuple[int, int, int, int, int]):
-        for w in self.widgets:
-            w.input(key, mouse_info)
+        if self.win.visible:
+            for w in self.widgets:
+                w.input(key, mouse_info)
 
 
 
@@ -152,9 +157,18 @@ class MatrixView(Panel):
         self.wm = WidgetManager(self)
         self.view = View(viewinfo[0],viewinfo[1], [viewinfo[2],viewinfo[3]], self, screen)
         self.view.boxouter()
-        self.infowin = None
+        self.visible = True
+
+        self.containing : Dict[str, MatrixView] = dict()
 
         self._adddefaultbuttons(defaultbuttons)
+
+    @property
+    def infowin(self) -> 'InfoPad':
+        if self.containing.get('infowin'):
+            return self.containing['infowin']
+        else:
+            return None
         
     def getsize(self):
         '''Devuelve el tamaño del pad y de la vista.'''
@@ -165,29 +179,48 @@ class MatrixView(Panel):
         defaultbuttons define las apariciones correspondientes: [info, minimize, exit]'''
         y,x = self.view.y, self.view.x+self.view.size[1]
         if defaultbuttons[2]:
-            exit = Button(self, 'exit', [y,x], lambda self: self.showinfo(), 'X', onborder=1)
+            exit = Button(self, 'exit', [y,x], lambda: self.hide(), 'X', onborder=1)
             self.wm.addwidget(exit)
         if defaultbuttons[1]:
-            minimize = Button(self, 'minimize', [y,x-1], None, '▭', onborder=1)
+            minimize = Button(self, 'minimize', [y,x-1], lambda : self.hide(), '▭', onborder=1)
             self.wm.addwidget(minimize)
         if defaultbuttons[0]:
-            self.infowin = self.pad.subpad(5,5)
+            #self.containing['infowin'] = InfoPad(self.screen, 10, self.view.getsize()[1]-2, [self.view.getposyxglobal()[0]+1,self.view.getposyxglobal()[1]+1, 3,self.view.getsize()[1]-3])
+            self.containing['infowin'] = InfoPad(self.pad, 2, 2, [2,2, 2,2])
             self.infowin.box()
-            help = Button(self, 'help', [y,x-2], lambda self: self._drawinfowin(), '!', onborder=1)
+            self.infowin.hide()
+            help = Button(self, 'help', [y,x-2], lambda : self._drawinfowin(), '?', onborder=1)
             self.wm.addwidget(help)
 
     def _drawinfowin(self):
-        self.infowin.refresh()
+        if self.infowin.visible:
+            self.infowin.hide()
+        else:
+            self.infowin.show()
+        #self.infowin.show()
+        self.screen.addstr(self.screen.getmaxyx()[0]-3, 0, "info button pressed")
+        self.showinfo()
     
     def showinfo(self):
         '''Muestra informacion sobre el pad y la vista.'''
         info = f"Vista:{self.getsize()[0]}, Pad:{self.getsize()[1]}"
         self.screen.addstr(self.view.smaxrow+1,self.view.smincol+2, info)
-        self.screen.refresh()
 
     def addstr(self, y, x, string, attr=0):
         '''Añade string al pad. Por ahora es lo mismo que usar pad.addstr()'''
         self.pad.addstr(y, x, string, attr)
+
+    def box(self):
+        self.view.boxouter()
+
+    def erase(self):
+        self.pad.erase()
+
+    def hide(self):
+        self.visible = False
+
+    def show(self):
+        self.visible = True
 
     def processinput(self):
         pass
@@ -195,18 +228,29 @@ class MatrixView(Panel):
     def update(self):
         pass
 
-    def refresh(self):
+    def noutrefresh(self):
         '''Dibuja la View del pad.'''
-        self.pad.refresh(self.view.pminrow,self.view.pmincol, 
-                         self.view.sminrow+self.border,self.view.smincol+self.border, 
-                         self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
-        self.wm.drawwidgets()
+        if self.visible:
+            
+            self.box()
+            self.wm.drawwidgets()
+            self.pad.noutrefresh(self.view.pminrow,self.view.pmincol, 
+                            self.view.sminrow+self.border,self.view.smincol+self.border, 
+                            self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
+
+            for k, e in self.containing.items():
+                if e.visible:
+                    e.noutrefresh()
+
+        else:
+            self.pad.erase()
+
 
 
 
 class InfoPad(MatrixView):
-    def __init__(self, screen):
-        MatrixView.__init__(self, 10, 10, [0,0,10,10], screen, border=1, defaultbuttons=[1, 0, 0])
+    def __init__(self, screen, nlines, ncols, viewinfo: Tuple[int, int, int, int]):
+        MatrixView.__init__(self, nlines, ncols, viewinfo, screen, border=1, defaultbuttons=[0, 0, 1])
 
 
 def exitcallback():
@@ -216,17 +260,24 @@ def exitcallback():
 def main(screen:'curses._CursesWindow'):
     curses.curs_set(0)
     curses.mousemask(-1)
+    screen.timeout(0)
 
     win = MatrixView(15,30, [0,0, 15, 40], screen)
     win.addstr(0, 0, 'Ventanica 1')
     win.addstr(1,0, 'Hay '+str(curses.LINES)+' líneas y '+str(curses.COLS)+' columnas')
-    win.refresh()
+    for i in range(2,10):
+        win.addstr(i, 0, '####################')
+    win.noutrefresh()
 
     win2 = MatrixView(15,30, [0,42, screen.getmaxyx()[0]-0-3, screen.getmaxyx()[1]-42-3], screen)
-    win2.refresh()
+    win2.noutrefresh()
+    for i in range(0,10):
+        win2.addstr(i, 0, '#################################')
     win3 = MatrixView(15,30, [17,0, screen.getmaxyx()[0]-17-2-2, 40], screen)
-    win3.refresh()
-    screen.refresh()
+    win3.noutrefresh()
+    for i in range(0,0):
+        win3.addstr(i, 0, '##################################')
+    screen.noutrefresh()
 
     end = True
 
@@ -246,10 +297,18 @@ def main(screen:'curses._CursesWindow'):
                 win2.wm.input(event, minfo)
                 win3.wm.input(event, minfo)
 
-        win.refresh()
-        win2.refresh()
-        screen.refresh()
+        #screen.noutrefresh()
+        screen.clear()
+        #screen.noutrefresh()
+
+        win.noutrefresh()
+        win2.noutrefresh()
+        win3.noutrefresh()
+
+        curses.doupdate()
+
         time.sleep(0.0167)
+        
         
 
 
