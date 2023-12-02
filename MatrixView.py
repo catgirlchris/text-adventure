@@ -18,6 +18,7 @@ class View:
 
         self.matrixview = matrixview
         self.screen = screen
+        self.parent = self.matrixview.parent
 
     @property
     def pminrow(self):
@@ -48,7 +49,7 @@ class View:
 
     def boxouter(self):
         '''Dibuja un rectangulo alrededor de la vista. Por ahora lo dibuja en screen, la pantalla principal.'''
-        draw.rectangle(self.screen, self.sminrow, self.smincol, self.smaxrow+1, self.smaxcol+1)
+        draw.rectangle(self.parent, self.sminrow, self.smincol, self.smaxrow+1, self.smaxcol+1)
     
     def getsize(self) -> Tuple[int,int]:
         '''Devuelve el tamaño de la ventana vista a dibujar.'''
@@ -150,23 +151,27 @@ class Panel():
 class MatrixView(Panel):
     """Clase hereda de Pane"""
 
-    def __init__(self, nlines, ncols, viewinfo: Tuple[int, int, int, int], screen:'curses._CursesWindow', border=1, defaultbuttons: Tuple[bool, bool, bool] = [1,1,1]):
+    def __init__(self, nlines, ncols, viewinfo: Tuple[int, int, int, int], screen:'curses._CursesWindow', parent=None, border=1, defaultbuttons: Tuple[bool, bool, bool] = [1,1,1]):
         self.pad = curses.newpad(nlines, ncols)
         self.border = border
         self.screen = screen
+        if parent == None:
+            self.parent = screen
+        else:
+            self.parent = parent
         self.wm = WidgetManager(self)
         self.view = View(viewinfo[0],viewinfo[1], [viewinfo[2],viewinfo[3]], self, screen)
         self.view.boxouter()
         self.visible = True
 
-        self.containing : Dict[str, MatrixView] = dict()
+        self.children : Dict[str, MatrixView] = dict()
 
         self._adddefaultbuttons(defaultbuttons)
 
     @property
     def infowin(self) -> 'InfoPad':
-        if self.containing.get('infowin'):
-            return self.containing['infowin']
+        if self.children.get('infowin'):
+            return self.children['infowin']
         else:
             return None
         
@@ -185,8 +190,8 @@ class MatrixView(Panel):
             minimize = Button(self, 'minimize', [y,x-1], lambda : self.hide(), '▭', onborder=1)
             self.wm.addwidget(minimize)
         if defaultbuttons[0]:
-            #self.containing['infowin'] = InfoPad(self.screen, 10, self.view.getsize()[1]-2, [self.view.getposyxglobal()[0]+1,self.view.getposyxglobal()[1]+1, 3,self.view.getsize()[1]-3])
-            self.containing['infowin'] = InfoPad(self.pad, 2, 2, [2,2, 2,2])
+            #self.children['infowin'] = InfoPad(self.screen, 10, self.view.getsize()[1]-2, [self.view.getposyxglobal()[0]+1,self.view.getposyxglobal()[1]+1, 3,self.view.getsize()[1]-3])
+            self.children['infowin'] = InfoPad(self.pad, 2, 2, [2,2, 2,2])
             self.infowin.box()
             self.infowin.hide()
             help = Button(self, 'help', [y,x-2], lambda : self._drawinfowin(), '?', onborder=1)
@@ -238,9 +243,11 @@ class MatrixView(Panel):
                             self.view.sminrow+self.border,self.view.smincol+self.border, 
                             self.view.smaxrow+self.border*2,self.view.smaxcol+self.border*2)
 
-            for k, e in self.containing.items():
+            for k, e in self.children.items():
                 if e.visible:
                     e.noutrefresh()
+                else:
+                    e.erase()
 
         else:
             self.pad.erase()
@@ -298,8 +305,8 @@ def main(screen:'curses._CursesWindow'):
                 win3.wm.input(event, minfo)
 
         #screen.noutrefresh()
-        screen.clear()
-        #screen.noutrefresh()
+        #screen.clear()
+        screen.noutrefresh()
 
         win.noutrefresh()
         win2.noutrefresh()
